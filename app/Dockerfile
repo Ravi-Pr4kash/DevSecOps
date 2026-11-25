@@ -1,14 +1,15 @@
-
 FROM node:22-alpine
+
+RUN npm install -g npm@latest
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install --omit=dev
+RUN npm ci --omit=dev
 
-COPY src ./src
+COPY . .
 
 EXPOSE 3000
 
-CMD ["node", "src/server.js"]
+CMD [ "npm", "start" ]
