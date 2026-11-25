@@ -2,10 +2,12 @@
 pipeline {
     agent any
 
-    environment {
-        PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
-        IMAGE_NAME = "devsecops-app"
-    }
+   environment {
+    PATH = "/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin"
+    IMAGE_NAME = "devsecops-app"
+    DOCKERHUB_USERNAME = "raviiprakashh"
+    DOCKERHUB_REPO = "devsecops-app"
+}
 
     stages {
         stage('Checkout') {
@@ -13,6 +15,21 @@ pipeline {
                 echo "Source code checked out from GitHub"
             }
         }
+
+
+stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            sh '''
+                sonar-scanner \
+                  -Dsonar.projectKey=devsecops-app \
+                  -Dsonar.projectName="DevSecOps App" \
+                  -Dsonar.sources=app \
+                  -Dsonar.host.url=http://localhost:9000
+            '''
+        }
+    }
+}
 
         stage('Build Docker Image') {
             steps {
@@ -23,6 +40,41 @@ pipeline {
                 '''
             }
         }
+
+
+stage('Push to Docker Hub') {
+    steps {
+        withCredentials([
+            string(
+                credentialsId: 'dockerhub-token',
+                variable: 'DOCKERHUB_TOKEN'
+            )
+        ]) {
+            sh '''
+                echo "$DOCKERHUB_TOKEN" | docker login \
+                  -u "$DOCKERHUB_USERNAME" \
+                  --password-stdin
+
+                docker tag \
+                  ${IMAGE_NAME}:${BUILD_NUMBER} \
+                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_NUMBER}
+
+                docker tag \
+                  ${IMAGE_NAME}:${BUILD_NUMBER} \
+                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest
+
+                docker push \
+                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_NUMBER}
+
+                docker push \
+                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest
+
+                docker logout
+            '''
+        }
+    }
+}
+
 
         stage('Verify Docker Image') {
             steps {
