@@ -17,19 +17,26 @@ pipeline {
         }
 
 
+
 stage('SonarQube Analysis') {
     steps {
         withSonarQubeEnv('SonarQube') {
-            sh '''
-                sonar-scanner \
-                  -Dsonar.projectKey=devsecops-app \
-                  -Dsonar.projectName="DevSecOps App" \
-                  -Dsonar.sources=app \
-                  -Dsonar.host.url=http://localhost:9000
-            '''
+            script {
+                def scannerHome = tool 'SonarScanner'
+
+                withEnv(["PATH+SONAR=${scannerHome}/bin"]) {
+                    sh '''
+                        sonar-scanner \
+                          -Dsonar.projectKey=devsecops-app \
+                          -Dsonar.projectName="DevSecOps App" \
+                          -Dsonar.sources=app
+                    '''
+                }
+            }
         }
     }
 }
+
 
         stage('Build Docker Image') {
             steps {
