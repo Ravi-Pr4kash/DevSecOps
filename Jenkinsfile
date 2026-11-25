@@ -53,7 +53,7 @@ stage('Push to Docker Hub') {
     steps {
         withCredentials([
             string(
-                credentialsId: 'dockerhub-token',
+                credentialsId: 'dockerhub-creds',
                 variable: 'DOCKERHUB_TOKEN'
             )
         ]) {
