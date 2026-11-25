@@ -51,10 +51,11 @@ stage('SonarQube Analysis') {
 
 stage('Push to Docker Hub') {
     steps {
-        withCredentials([
+        usernamePassword([
             string(
                 credentialsId: 'dockerhub-creds',
-                variable: 'DOCKERHUB_TOKEN'
+                usernameVariable: 'DOCKERHUB_USERNAME',
+                passwordVariable: 'DOCKERHUB_TOKEN'
             )
         ]) {
             sh '''
