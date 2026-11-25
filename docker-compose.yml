@@ -1,0 +1,21 @@
+
+services:
+  mongo:
+    image: mongo:8
+    container_name: devsecops-mongo
+    volumes:
+      - mongo_data:/data/db
+
+  app:
+    build: ./app
+    container_name: devsecops-app
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/devsecops_db
+    depends_on:
+      - mongo
+
+volumes:
+  mongo_data:
