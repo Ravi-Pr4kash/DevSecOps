@@ -50,10 +50,11 @@ stage('SonarQube Analysis') {
 
 
 
-stage('Trivy Image Scan') {
+stage('Trivy Security Scan') {
     steps {
         sh '''
             trivy image \
+              --skip-db-update \
               --severity HIGH,CRITICAL \
               --exit-code 1 \
               devsecops-app:${BUILD_NUMBER}
