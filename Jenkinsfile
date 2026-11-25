@@ -51,35 +51,35 @@ stage('SonarQube Analysis') {
 
 stage('Push to Docker Hub') {
     steps {
-        usernamePassword([
-            string(
-                credentialsId: 'dockerhub-creds',
-                usernameVariable: 'DOCKERHUB_USERNAME',
-                passwordVariable: 'DOCKERHUB_TOKEN'
-            )
-        ]) {
-            sh '''
-                echo "$DOCKERHUB_TOKEN" | docker login \
-                  -u "$DOCKERHUB_USERNAME" \
-                  --password-stdin
+        withCredentials([
+    usernamePassword(
+        credentialsId: 'dockerhub-creds',
+        usernameVariable: 'DOCKERHUB_USERNAME',
+        passwordVariable: 'DOCKERHUB_TOKEN'
+    )
+]) {
+    sh '''
+        echo "$DOCKERHUB_TOKEN" | docker login \
+          -u "$DOCKERHUB_USERNAME" \
+          --password-stdin
 
-                docker tag \
-                  ${IMAGE_NAME}:${BUILD_NUMBER} \
-                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_NUMBER}
+        docker tag \
+          ${IMAGE_NAME}:${BUILD_NUMBER} \
+          ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
-                docker tag \
-                  ${IMAGE_NAME}:${BUILD_NUMBER} \
-                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest
+        docker tag \
+          ${IMAGE_NAME}:${BUILD_NUMBER} \
+          ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest
 
-                docker push \
-                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_NUMBER}
+        docker push \
+          ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:${BUILD_NUMBER}
 
-                docker push \
-                  ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest
+        docker push \
+          ${DOCKERHUB_USERNAME}/${DOCKERHUB_REPO}:latest
 
-                docker logout
-            '''
-        }
+        docker logout
+    '''
+}
     }
 }
 
