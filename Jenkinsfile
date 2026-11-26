@@ -119,6 +119,8 @@ stage('Deploy to Kubernetes') {
     }
 }
 
+}
+
     post {
         success {
             echo "DevSecOps pipeline completed successfully!"
