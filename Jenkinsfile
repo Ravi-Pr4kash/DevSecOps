@@ -106,6 +106,19 @@ stage('Push to Docker Hub') {
         }
     }
 
+    stage('Deploy to Kubernetes') {
+    steps {
+        sh """
+            helm upgrade --install devsecops-app ./k8s/devsecops-app \
+              --namespace devsecops \
+              --set image.repository=${DOCKERHUB_USERNAME}/devsecops-app \
+              --set image.tag=${BUILD_NUMBER} \
+              --wait \
+              --timeout 3m
+        """
+    }
+}
+
     post {
         success {
             echo "DevSecOps pipeline completed successfully!"
