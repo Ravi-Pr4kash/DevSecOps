@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: devsecops-app
-          image: raviiprakashh/devsecops-app:20
+          image: raviiprakashh/devsecops-app:21
           ports:
             - containerPort: 3000
           env:
