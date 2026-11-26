@@ -34,6 +34,18 @@ pipeline {
             }
         }
 
+
+
+        stage('Run API Tests') {
+            steps {
+                dir('app') {
+                    sh 'npm ci'
+                    sh 'npm test'
+        }
+    }
+}
+
+
         stage('Build Docker Image') {
             steps {
                 sh '''

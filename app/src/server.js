@@ -1,3 +1,4 @@
+
 const userRoutes = require("./routes/users.js");
 const express = require("express");
 const connectDB = require("./db");
@@ -30,4 +31,9 @@ async function startServer() {
   });
 }
 
-startServer();
+
+if (require.main === module) {
+  startServer();
+}
+
+module.exports = app;
