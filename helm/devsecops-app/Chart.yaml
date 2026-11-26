@@ -1,0 +1,7 @@
+
+apiVersion: v2
+name: devsecops-app
+description: Helm chart for DevSecOps Node.js application
+type: application
+version: 0.1.0
+appVersion: "14"

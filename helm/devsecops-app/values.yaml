@@ -1,0 +1,17 @@
+
+replicaCount: 1
+
+image:
+  repository: raviiprakashh/devsecops-app
+  tag: "23"
+  pullPolicy: IfNotPresent
+
+service:
+  type: NodePort
+  port: 3000
+  targetPort: 3000
+  nodePort: 30080
+
+env:
+  PORT: "3000"
+  MONGO_URI: mongodb://mongo:27017/devsecops_db
