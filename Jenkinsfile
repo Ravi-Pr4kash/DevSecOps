@@ -123,63 +123,63 @@ pipeline {
     }
 
 
-stage('Smoke Test') {
-    steps {
-        sh '''
-            set -eu
+        stage('Smoke Test') {
+            steps {
+                sh '''
+                set -eu
 
-            echo "Starting Kubernetes port-forward..."
+                echo "Starting Kubernetes port-forward..."
 
-            kubectl port-forward \
-                deployment/devsecops-app \
-                18080:3000 \
-                -n devsecops \
-                > port-forward.log 2>&1 &
+                kubectl port-forward \
+                    deployment/devsecops-app \
+                    18080:3000 \
+                    -n devsecops \
+                    > port-forward.log 2>&1 &
 
-            PF_PID=$!
+                PF_PID=$!
 
-            cleanup() {
-                kill "$PF_PID" 2>/dev/null || true
-            }
+                cleanup() {
+                    kill "$PF_PID" 2>/dev/null || true
+                }
 
-            trap cleanup EXIT
+                trap cleanup EXIT
 
-            echo "Waiting for application to respond..."
+                echo "Waiting for application to respond..."
 
-            ATTEMPT=1
-            HTTP_CODE="000"
+                ATTEMPT=1
+                HTTP_CODE="000"
 
-            while [ "$ATTEMPT" -le 30 ]; do
-                HTTP_CODE=$(curl -sS \
-                    -o health-response.json \
-                    -w "%{http_code}" \
-                    http://localhost:18080/health \
-                    || true)
+                while [ "$ATTEMPT" -le 30 ]; do
+                    HTTP_CODE=$(curl -sS \
+                        -o health-response.json \
+                        -w "%{http_code}" \
+                        http://localhost:18080/health \
+                        || true)
 
-                if [ "$HTTP_CODE" = "200" ]; then
-                    break
+                    if [ "$HTTP_CODE" = "200" ]; then
+                        break
+                    fi
+
+                    echo "Attempt $ATTEMPT: HTTP $HTTP_CODE"
+                    sleep 2
+                    ATTEMPT=$((ATTEMPT + 1))
+                done
+
+                if [ "$HTTP_CODE" != "200" ]; then
+                    echo "Smoke test failed: HTTP $HTTP_CODE"
+                    cat port-forward.log
+                    exit 1
                 fi
 
-                echo "Attempt $ATTEMPT: HTTP $HTTP_CODE"
-                sleep 2
-                ATTEMPT=$((ATTEMPT + 1))
-            done
+                echo "Health response:"
+                cat health-response.json
 
-            if [ "$HTTP_CODE" != "200" ]; then
-                echo "Smoke test failed: HTTP $HTTP_CODE"
-                cat port-forward.log
-                exit 1
-            fi
+                if ! grep -q '"status":"healthy"' health-response.json; then
+                    echo "Smoke test failed: unexpected response"
+                    exit 1
+                fi
 
-            echo "Health response:"
-            cat health-response.json
-
-            if ! grep -q '"status":"healthy"' health-response.json; then
-                echo "Smoke test failed: unexpected response"
-                exit 1
-            fi
-
-            echo "Smoke test passed!"
+                echo "Smoke test passed!"
         '''
     }
 }
