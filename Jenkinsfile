@@ -106,7 +106,7 @@ stage('Push to Docker Hub') {
         }
     }
 
-    stage('Deploy to Kubernetes') {
+stage('Deploy to Kubernetes') {
     steps {
         sh """
             helm upgrade --install devsecops-app ./k8s/devsecops-app \
