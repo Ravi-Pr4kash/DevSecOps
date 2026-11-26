@@ -114,27 +114,37 @@ pipeline {
             }
         }
 
-        stage('Smoke Test') {
-            steps {
+        
+stage('Smoke Test') {
+    steps {
+        script {
+            def smokeTest = {
                 sh '''
                     set -eu
 
-                    echo "Starting Kubernetes port-forward..."
-                    kubectl port-forward deployment/devsecops-app 18080:3000 \
-                        -n devsecops > port-forward.log 2>&1 &
+                    kubectl port-forward \
+                        deployment/devsecops-app \
+                        18080:3000 \
+                        -n devsecops \
+                        > port-forward.log 2>&1 &
+
                     PF_PID=$!
 
-                    cleanup() { kill "$PF_PID" 2>/dev/null || true; }
+                    cleanup() {
+                        kill "$PF_PID" 2>/dev/null || true
+                    }
+
                     trap cleanup EXIT
 
-                    echo "Waiting for application to respond..."
                     ATTEMPT=1
                     HTTP_CODE="000"
 
                     while [ "$ATTEMPT" -le 30 ]; do
-                        HTTP_CODE=$(curl -sS -o health-response.json \
+                        HTTP_CODE=$(curl -sS \
+                            -o health-response.json \
                             -w "%{http_code}" \
-                            http://localhost:18080/health || true)
+                            http://localhost:18080/health \
+                            || true)
 
                         if [ "$HTTP_CODE" = "200" ]; then
                             break
@@ -151,18 +161,46 @@ pipeline {
                         exit 1
                     fi
 
-                    echo "Health response:"
                     cat health-response.json
 
-                    if ! grep -Eq '"status"[[:space:]]*:[[:space:]]*"healthy"' health-response.json; then
-                        echo "Smoke test failed: unexpected response"
+                    if ! grep -q '"status":"healthy"' health-response.json; then
+                        echo "Unexpected health response"
                         exit 1
                     fi
 
                     echo "Smoke test passed!"
                 '''
             }
+
+            try {
+                smokeTest()
+            } catch (Exception e) {
+                echo "Smoke test failed! Starting Helm rollback..."
+
+                sh '''
+                    helm rollback devsecops-app \
+                        -n devsecops \
+                        --wait \
+                        --timeout 3m
+
+                    kubectl rollout status \
+                        deployment/devsecops-app \
+                        -n devsecops \
+                        --timeout=180s
+                '''
+
+                echo "Previous version restored. Checking health..."
+
+                smokeTest()
+
+                echo "Rollback successful. Previous version is healthy."
+
+                error("New deployment failed smoke test. Rolled back.")
+            }
         }
+    }
+}
+
     }
 
     post {
